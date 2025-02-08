@@ -124,9 +124,9 @@ export default function RecipeDetail({ params }: { params: { id: string } }) {
         <div className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Ingredients</h2>
           <ul className="list-disc list-inside space-y-2">
-            {recipe.ingredients.parts.map((ingredient, index) => (
+            {recipe.ingredients?.parts?.map((ingredient, index) => (
               <li key={index}>{ingredient}</li>
-            ))}
+            )) || 'No ingredients available'}
           </ul>
         </div>
 

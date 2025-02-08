@@ -4,10 +4,8 @@ import { useState, useEffect } from 'react';
 import { OramaClient } from '@oramacloud/client';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Clock, Users, Flame } from "lucide-react"
-import Link from "next/link"
+import RecipeCard from '@/components/RecipeCard';
+import { validateAndSanitizeRecipe } from '@/utils/recipeValidator';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -25,6 +23,10 @@ export default function Home() {
       const endpoint = process.env.NEXT_PUBLIC_ORAMA_ENDPOINT?.trim();
       const apiKey = process.env.NEXT_PUBLIC_ORAMA_API_KEY?.trim();
       
+      if (!endpoint || !apiKey) {
+        throw new Error('Missing API configuration');
+      }
+
       const client = new OramaClient({
         endpoint,
         api_key: apiKey
@@ -37,8 +39,28 @@ export default function Home() {
         offset: (currentPage - 1) * ITEMS_PER_PAGE
       });
 
-      setRecipes(searchResults.hits.map(hit => hit.document));
-      setTotalPages(Math.ceil(searchResults.count / ITEMS_PER_PAGE));
+      // Validate that we have hits array
+      if (!searchResults?.hits || !Array.isArray(searchResults.hits)) {
+        setRecipes([]);
+        setTotalPages(0);
+        return;
+      }
+
+      // Validate and sanitize each recipe
+      const validatedRecipes = searchResults.hits
+        .map(hit => {
+          try {
+            if (!hit?.document) return null;
+            return validateAndSanitizeRecipe(hit.document);
+          } catch (err) {
+            console.error('Error validating recipe:', hit?.document?.id, err);
+            return null;
+          }
+        })
+        .filter(recipe => recipe !== null); // Remove any invalid recipes
+
+      setRecipes(validatedRecipes || []);
+      setTotalPages(Math.ceil((searchResults.count || 0) / ITEMS_PER_PAGE));
       setError(null);
     } catch (err) {
       console.error('Search error:', err);
@@ -76,48 +98,16 @@ export default function Home() {
           <p className="col-span-full text-center text-muted-foreground">Loading recipes...</p>
         ) : error ? (
           <p className="col-span-full text-center text-red-500">{error}</p>
-        ) : recipes.length > 0 ? (
+        ) : recipes && recipes.length > 0 ? (
           recipes.map((recipe) => (
-            <Card key={recipe.id} className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">{recipe.name}</CardTitle>
-                <Badge variant="secondary" className="w-fit">
-                  {recipe.category}
-                </Badge>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <p className="text-muted-foreground mb-4">{recipe.description}</p>
-                <div className="flex gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {recipe.timing.totalTime} mins
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    Serves {recipe.servings}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Flame className="w-4 h-4" />
-                    {Math.round(recipe.nutrition.calories)} cal
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Link 
-                  href={`/recipe/${encodeURIComponent(recipe.id)}?name=${encodeURIComponent(recipe.name)}`} 
-                  className="w-full"
-                >
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">View Recipe</Button>
-                </Link>
-              </CardFooter>
-            </Card>
+            <RecipeCard key={recipe.id} recipe={recipe} />
           ))
         ) : (
           <p className="col-span-full text-center text-muted-foreground">No recipes found</p>
         )}
       </div>
 
-      {recipes.length > 0 && (
+      {recipes && recipes.length > 0 && (
         <div className="flex justify-center items-center gap-2">
           <Button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
