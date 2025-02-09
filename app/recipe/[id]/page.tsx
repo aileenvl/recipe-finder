@@ -5,9 +5,23 @@ import { OramaClient } from '@oramacloud/client';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+interface Recipe {
+  name: string;
+  description: string;
+  timing: {
+    totalTime: number;
+  };
+  servings: number;
+  ingredients: {
+    parts: string[];
+  };
+  instructions: string[];
+  id: string;
+}
+
 export default function RecipeDetail({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
-  const [recipe, setRecipe] = useState(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,11 +47,10 @@ export default function RecipeDetail({ params }: { params: { id: string } }) {
 
         const endpoint = process.env.NEXT_PUBLIC_ORAMA_ENDPOINT?.trim();
         const apiKey = process.env.NEXT_PUBLIC_ORAMA_API_KEY?.trim();
-        
-        console.log('Orama config:', { 
-          endpoint: endpoint ? 'exists' : 'missing',
-          apiKey: apiKey ? 'exists' : 'missing'
-        });
+
+        if (!endpoint || !apiKey) {
+          throw new Error('Missing API configuration');
+        }
 
         const client = new OramaClient({
           endpoint,
@@ -51,10 +64,11 @@ export default function RecipeDetail({ params }: { params: { id: string } }) {
           limit: 10
         });
 
-        console.log('Search results:', searchResults);
+        if (!searchResults?.hits || !Array.isArray(searchResults.hits)) {
+          return;
+        }
 
         const foundRecipe = searchResults.hits.find(hit => hit.document.id === id)?.document;
-        console.log('Found recipe:', foundRecipe ? 'yes' : 'no');
 
         if (!foundRecipe) {
           console.log('Recipe not found, redirecting to home');
@@ -124,9 +138,9 @@ export default function RecipeDetail({ params }: { params: { id: string } }) {
         <div className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Ingredients</h2>
           <ul className="list-disc list-inside space-y-2">
-            {recipe.ingredients?.parts?.map((ingredient, index) => (
+            {recipe.ingredients.parts.map((ingredient, index) => (
               <li key={index}>{ingredient}</li>
-            )) || 'No ingredients available'}
+            ))}
           </ul>
         </div>
 

@@ -1,21 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-
-interface Recipe {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  images?: string[];
-  timing: {
-    totalTime: number;
-  };
-  servings: number;
-  nutrition: {
-    calories: number;
-  };
-}
+import type { Recipe } from '@/utils/recipeValidator';
 
 const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
   // Safety check for required properties

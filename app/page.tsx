@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import RecipeCard from '@/components/RecipeCard';
 import { validateAndSanitizeRecipe } from '@/utils/recipeValidator';
+import type { Recipe } from '@/utils/recipeValidator';
 
 const ITEMS_PER_PAGE = 12;
 
 export default function Home() {
-  const [recipes, setRecipes] = useState([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,16 +21,16 @@ export default function Home() {
   const performSearch = async () => {
     try {
       setLoading(true);
-      const endpoint = process.env.NEXT_PUBLIC_ORAMA_ENDPOINT?.trim();
-      const apiKey = process.env.NEXT_PUBLIC_ORAMA_API_KEY?.trim();
+      const oramaEndpoint: string = process.env.NEXT_PUBLIC_ORAMA_ENDPOINT!;
+      const oramaApiKey: string = process.env.NEXT_PUBLIC_ORAMA_API_KEY!;
       
-      if (!endpoint || !apiKey) {
+      if (!oramaEndpoint || !oramaApiKey) {
         throw new Error('Missing API configuration');
       }
 
       const client = new OramaClient({
-        endpoint,
-        api_key: apiKey
+        endpoint: oramaEndpoint,
+        api_key: oramaApiKey
       });
 
       const searchResults = await client.search({
@@ -57,9 +58,9 @@ export default function Home() {
             return null;
           }
         })
-        .filter(recipe => recipe !== null); // Remove any invalid recipes
+        .filter((recipe): recipe is Recipe => recipe !== null); // Type guard to ensure non-null recipes
 
-      setRecipes(validatedRecipes || []);
+      setRecipes(validatedRecipes);
       setTotalPages(Math.ceil((searchResults.count || 0) / ITEMS_PER_PAGE));
       setError(null);
     } catch (err) {
