@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import Navigation from '@/components/Navigation'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Recipe Finder',
+  description: 'Find and plan your weekly meals',
 }
 
 export default function RootLayout({
@@ -13,7 +14,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Navigation />
+        <main className="min-h-screen bg-gray-50">
+          {children}
+        </main>
+      </body>
     </html>
   )
 }

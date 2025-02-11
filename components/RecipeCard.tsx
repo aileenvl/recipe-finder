@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Recipe } from '@/utils/recipeValidator';
+import AddToWeeklyMeal from './AddToWeeklyMeal';
 
 const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
   // Safety check for required properties
@@ -41,12 +42,15 @@ const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
           <span> {recipe.nutrition?.calories ? Math.round(recipe.nutrition.calories) : 'N/A'} cal</span>
         </div>
         
-        <Link 
-          href={`/recipe/${encodeURIComponent(recipe.id)}?name=${encodeURIComponent(recipe.name)}`}
-          className="mt-4 inline-block px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-        >
-          View Recipe
-        </Link>
+        <div className="mt-4 flex gap-2">
+          <Link 
+            href={`/recipe/${encodeURIComponent(recipe.id)}?name=${encodeURIComponent(recipe.name)}`}
+            className="inline-block px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          >
+            View Recipe
+          </Link>
+          <AddToWeeklyMeal recipe={recipe} />
+        </div>
       </div>
     </div>
   );
